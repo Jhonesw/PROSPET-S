@@ -46,44 +46,10 @@
             width: calc(100% - 260px);
         }
 
-        /* Container do Carrinho para permitir inversão no mobile */
-        .carrinho-wrapper {
-            display: flex;
-            flex-direction: column;
-        }
-
         @media (max-width: 992px) {
             body { flex-direction: column; }
             .sidebar { width: 100%; height: auto; position: relative; padding: 15px; }
             .main-content { margin-left: 0; width: 100%; padding: 15px; }
-            
-            /* Agenda menor no responsive */
-            .stat-card { padding: 12px; margin-bottom: 10px; }
-            .stat-card p { font-size: 1.3rem; }
-
-            /* Botões do caixa lado a lado menores em linha no mobile */
-            .caixa-controles { 
-                display: flex !important; 
-                flex-direction: row !important; 
-                flex-wrap: nowrap !important; 
-                gap: 5px !important; 
-                overflow-x: auto; 
-                padding-bottom: 8px;
-            }
-            .caixa-controles button { 
-                min-width: auto !important; 
-                padding: 10px 5px !important; 
-                font-size: 0.65rem !important;
-                flex: 1;
-                white-space: nowrap;
-            }
-
-            /* INVERSÃO DO CARRINHO NO MOBILE */
-            .carrinho-wrapper {
-                flex-direction: column-reverse;
-            }
-            .carrinho-header { margin-bottom: 15px; border-bottom: 2px dashed var(--secondary); padding-bottom: 15px; }
-            .carrinho-itens { margin-top: 15px; }
         }
 
         .container-app {
@@ -194,21 +160,6 @@
         .status-caixa { padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; text-align: center; }
         .caixa-aberto { background: #e8f5e9; color: #27ae60; border: 1px solid #27ae60; }
         .caixa-fechado { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
-
-        /* Estilos da Busca Smart PDV */
-        .search-container { position: relative; width: 100%; grid-column: span 2; }
-        .search-results { 
-            position: absolute; top: 100%; left: 0; right: 0; 
-            background: white; border: 1px solid #ddd; border-radius: 0 0 8px 8px; 
-            z-index: 999; max-height: 200px; overflow-y: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            display: none;
-        }
-        .search-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
-        .search-item:hover { background: #f0f7ff; }
-        .search-item b { color: var(--secondary); }
-
-        /* Estilo para o contador de itens */
-        .total-itens-label { font-size: 0.85rem; color: #7f8c8d; font-weight: normal; margin-right: 15px; }
     </style>
 </head>
 <body>
@@ -216,12 +167,12 @@
 <aside class="sidebar">
     <h1 class="logo">🐾 ElevoPet's Pro </h1>
     <nav>
-        <button onclick="playMenuSound(); showSection('sec-produtos')" id="btn-produtos" class="active">📦 Estoque/Cadastros</button>
-        <button onclick="playMenuSound(); verificarAberturaCaixa()" id="btn-vendas">🛒 Vendas (PDV)</button>
-        <button onclick="playMenuSound(); showSection('sec-pets')" id="btn-pets">📅 Agenda/Serviços</button>
-        <button onclick="playMenuSound(); showSection('sec-busca')" id="btn-busca">📋 Relatórios</button>
-        <button onclick="playMenuSound(); showSection('sec-financeiro')" id="btn-financeiro">💰 Financeiro</button>
-        <button onclick="playMenuSound(); showSection('sec-backup')" id="btn-backup">💾 Backup</button>
+        <button onclick="showSection('sec-produtos')" id="btn-produtos" class="active">📦 Estoque/Cadastros</button>
+        <button onclick="verificarAberturaCaixa()" id="btn-vendas">🛒 Vendas (PDV)</button>
+        <button onclick="showSection('sec-pets')" id="btn-pets">📅 Agenda/Serviços</button>
+        <button onclick="showSection('sec-busca')" id="btn-busca">📋 Relatórios</button>
+        <button onclick="showSection('sec-financeiro')" id="btn-financeiro">💰 Financeiro</button>
+        <button onclick="showSection('sec-backup')" id="btn-backup">💾 Backup</button>
     </nav>
 </aside>
 
@@ -231,9 +182,18 @@
             <h4>Agenda Hoje</h4>
             <p id="dash-agenda-count">0</p>
         </div>
+        <div class="stat-card" style="border-color: var(--secondary);">
+            <h4>Vendas Diárias</h4>
+            <p id="dash-vendas-hoje">R$ 0.00</p>
+        </div>
+        <div class="stat-card" style="border-color: var(--success);">
+            <h4>Lucro Diário</h4>
+            <p id="dash-lucro-hoje">R$ 0.00</p>
+        </div>
     </div>
 
     <div class="container-app">
+        <!-- SEÇÃO ESTOQUE E CADASTROS -->
         <section id="sec-produtos" class="section active">
             <h2>Gestão de Estoque (Produtos)</h2>
             <div class="grid-form">
@@ -277,44 +237,37 @@
             </div>
         </section>
 
+        <!-- SEÇÃO VENDAS (PDV) -->
         <section id="sec-vendas" class="section">
             <div id="statusCaixaInfo" class="status-caixa"></div>
             <div class="caixa-controles">
                 <button class="btn-action" style="background: var(--warning);" onclick="abrirModalCaixaOp('sangria')">💸 Sangria</button>
                 <button class="btn-action" style="background: var(--secondary);" onclick="abrirModalCaixaOp('suprimento')">📥 Suprimento</button>
+                <button class="btn-action" style="background: var(--primary);" onclick="exibirSaldoCaixa()">📊 Saldo Atual</button>
                 <button class="btn-action" style="background: var(--accent);" onclick="abrirModalFecharCaixa()">🔒 Fechar Caixa</button>
             </div>
 
             <h2>Ponto de Venda</h2>
             <div class="grid-form" style="background: #f8f9fa; padding: 20px; border-radius: 12px;">
-                <div class="search-container">
-                    <input type="text" id="vendaBuscaSmart" placeholder="Código ou Nome do Produto..." onkeyup="buscarProdutoSmart(event)">
-                    <div id="vendaResultados" class="search-results"></div>
-                </div>
+                <input type="text" id="vendaBuscaCodigo" placeholder="Cód. e Enter" onkeypress="if(event.key === 'Enter') buscarPorCodigo()">
+                <select id="vendaSelectProduto" onchange="sincronizarCodigo(); monitorarTipoVenda();"></select>
                 <input type="number" id="vendaQtd" value="1" step="0.001" placeholder="Qtd ou Peso">
+                <button class="btn-action" style="background: var(--secondary);" onclick="adicionarAoCarrinho()">+ ADICIONAR</button>
                 <div class="full-width">
                    <input type="tel" id="vendaWhats" placeholder="WhatsApp do Cliente (apenas números com DDD)">
                 </div>
             </div>
             <div style="margin-top:20px; background: #f0f7ff; padding: 20px; border-radius: 12px; border: 2px dashed var(--secondary);">
                 <h3>🛒 Carrinho</h3>
-                <div class="carrinho-wrapper">
-                    <div class="carrinho-itens">
-                        <table>
-                            <tbody id="listaCarrinho"></tbody>
-                        </table>
-                    </div>
-                    <div class="carrinho-header">
-                        <h3 style="text-align: right;">
-                            <span class="total-itens-label">Total de itens: <span id="qtdItensCarrinho">0</span></span>
-                            Total: <span id="totalCarrinho">R$ 0.00</span>
-                        </h3>
-                        <button class="btn-action" style="margin-top: 10px;" onclick="abrirModalVenda()">FINALIZAR COMPRA</button>
-                    </div>
-                </div>
+                <table>
+                    <tbody id="listaCarrinho"></tbody>
+                </table>
+                <h3 style="text-align: right;">Total: <span id="totalCarrinho">R$ 0.00</span></h3>
+                <button class="btn-action" style="margin-top: 10px;" onclick="abrirModalVenda()">FINALIZAR COMPRA</button>
             </div>
         </section>
 
+        <!-- SEÇÃO AGENDA -->
         <section id="sec-pets" class="section">
             <div class="tabs-relatorio">
                 <button class="tab-btn active" id="tab-novo-pet" onclick="switchSubTabPets('novo')">Novo Agendamento</button>
@@ -372,6 +325,7 @@
             </div>
         </section>
 
+        <!-- SEÇÃO RELATÓRIOS -->
         <section id="sec-busca" class="section">
             <div class="tabs-relatorio">
                 <button class="tab-btn active" id="tab-servico" onclick="switchTabRelatorio('servico')">Relatório de Serviço</button>
@@ -409,7 +363,7 @@
                                 <th>Sangrias</th>
                                 <th>Suprimentos</th>
                                 <th>Total Vendas</th>
-                                <th>Info</th>
+                                <th>Dinheiro Final</th>
                             </tr>
                         </thead>
                         <tbody id="listaHistoricoCaixa"></tbody>
@@ -418,17 +372,8 @@
             </div>
         </section>
 
+        <!-- SEÇÃO FINANCEIRO -->
         <section id="sec-financeiro" class="section">
-            <div class="dashboard-stats" style="margin-bottom: 25px;">
-                <div class="stat-card" style="border-color: var(--secondary);">
-                    <h4>Vendas Hoje</h4>
-                    <p id="dash-vendas-hoje">R$ 0.00</p>
-                </div>
-                <div class="stat-card" style="border-color: var(--success);">
-                    <h4>Lucro Hoje</h4>
-                    <p id="dash-lucro-hoje">R$ 0.00</p>
-                </div>
-            </div>
             <div class="stat-card" style="margin-bottom: 20px;">
                 <h3>Resumo Financeiro Total</h3>
                 <p>Faturamento Bruto: <b id="finVendas">R$ 0.00</b></p>
@@ -439,6 +384,7 @@
             </div>
         </section>
 
+        <!-- SEÇÃO BACKUP -->
         <section id="sec-backup" class="section">
             <h2>Backup do Sistema</h2>
             <p>Use os botões abaixo para salvar ou restaurar todos os dados do sistema (Produtos, Serviços, Vendas e Agenda).</p>
@@ -451,6 +397,9 @@
     </div>
 </main>
 
+<!-- MODAIS -->
+
+<!-- Modal Abertura de Caixa -->
 <div id="modalAbrirCaixa" class="modal">
     <div class="modal-content">
         <h3>Abertura de Caixa</h3>
@@ -463,6 +412,7 @@
     </div>
 </div>
 
+<!-- Modal Sangria / Suprimento -->
 <div id="modalCaixaOp" class="modal">
     <div class="modal-content">
         <h3 id="caixaOpTitulo">Operação</h3>
@@ -475,13 +425,12 @@
     </div>
 </div>
 
+<!-- Modal Fechamento -->
 <div id="modalFecharCaixa" class="modal">
     <div class="modal-content">
-        <h3 id="tituloCaixaModal">Fechamento de Caixa</h3>
+        <h3>Fechamento de Caixa</h3>
         <div id="resumoFechamento" style="margin-bottom: 20px; line-height: 1.6;"></div>
-        <div id="areaBtnFechamento">
-            <button class="btn-action" style="background: var(--accent);" onclick="confirmarFechamentoCaixa()">FECHAR CAIXA E ZERAR VALORES</button>
-        </div>
+        <button class="btn-action" style="background: var(--accent);" onclick="confirmarFechamentoCaixa()">FECHAR CAIXA E ZERAR VALORES</button>
         <button class="btn-action" style="background:#95a5a6; margin-top: 10px;" onclick="document.getElementById('modalFecharCaixa').style.display='none'">VOLTAR</button>
     </div>
 </div>
@@ -492,8 +441,7 @@
         <p id="totalModalTxt" style="font-size: 1.5rem; text-align: center; color: var(--success); font-weight: bold;"></p>
         <div style="display: grid; gap: 10px;">
             <button class="btn-action" style="background:#32bcad" onclick="processarConclusaoVenda('PIX')">PIX</button>
-            <button class="btn-action" style="background:#3498db" onclick="processarConclusaoVenda('Crédito')">CRÉDITO</button>
-            <button class="btn-action" style="background:#2980b9" onclick="processarConclusaoVenda('Débito')">DÉBITO</button>
+            <button class="btn-action" style="background:#3498db" onclick="processarConclusaoVenda('Cartão')">CARTÃO</button>
             <button class="btn-action" style="background:#2ecc71" onclick="processarConclusaoVenda('Dinheiro')">DINHEIRO</button>
             <button class="btn-action" style="background:#95a5a6" onclick="fecharModal()">CANCELAR</button>
         </div>
@@ -516,41 +464,12 @@
         servicos: [],
         historicoCaixas: [],
         vendaCounter: 0,
-        caixa: { status: 'fechado', usuario: '', dataAbertura: '', fundo: 0, entradas: 0, sangrias: 0, suprimentos: 0, detalhes: { 'PIX': 0, 'Crédito': 0, 'Débito': 0, 'Dinheiro': 0 } }
+        caixa: { status: 'fechado', usuario: '', dataAbertura: '', fundo: 0, entradas: 0, sangrias: 0, suprimentos: 0, detalhes: { 'PIX': 0, 'Cartão': 0, 'Dinheiro': 0 } }
     };
 
     let carrinho = [];
     let petSelecionadoId = null;
     let operacaoAtual = '';
-
-    // --- FUNÇÕES DE ÁUDIO ---
-    function playMenuSound() {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
-        gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.05);
-    }
-
-    function playSuccessSound() {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        oscillator.type = 'triangle';
-        oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-        oscillator.frequency.exponentialRampToValueAtTime(1046.50, audioCtx.currentTime + 0.1); // C6
-        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.2);
-    }
 
     function salvar() {
         localStorage.setItem('petshop_v2_db', JSON.stringify(db));
@@ -579,7 +498,7 @@
             entradas: 0,
             sangrias: 0,
             suprimentos: 0,
-            detalhes: { 'PIX': 0, 'Crédito': 0, 'Débito': 0, 'Dinheiro': 0 }
+            detalhes: { 'PIX': 0, 'Cartão': 0, 'Dinheiro': 0 }
         };
         document.getElementById('modalAbrirCaixa').style.display = 'none';
         salvar();
@@ -614,10 +533,8 @@
     }
 
     function abrirModalFecharCaixa() {
-        document.getElementById('tituloCaixaModal').innerText = "Fechamento de Caixa";
-        document.getElementById('areaBtnFechamento').style.display = 'block';
         const res = document.getElementById('resumoFechamento');
-        const totalVendas = db.caixa.detalhes['PIX'] + db.caixa.detalhes['Crédito'] + db.caixa.detalhes['Débito'] + db.caixa.detalhes['Dinheiro'];
+        const totalVendas = db.caixa.detalhes['PIX'] + db.caixa.detalhes['Cartão'] + db.caixa.detalhes['Dinheiro'];
         const saldoDinheiro = (db.caixa.fundo + db.caixa.detalhes['Dinheiro'] + db.caixa.suprimentos) - db.caixa.sangrias;
 
         res.innerHTML = `
@@ -625,8 +542,7 @@
             <b>Abertura:</b> ${db.caixa.dataAbertura}<br><hr>
             <b>Fundo Inicial:</b> R$ ${db.caixa.fundo.toFixed(2)}<br>
             <b>Vendas PIX:</b> R$ ${db.caixa.detalhes['PIX'].toFixed(2)}<br>
-            <b>Vendas Crédito:</b> R$ ${db.caixa.detalhes['Crédito'].toFixed(2)}<br>
-            <b>Vendas Débito:</b> R$ ${db.caixa.detalhes['Débito'].toFixed(2)}<br>
+            <b>Vendas Cartão:</b> R$ ${db.caixa.detalhes['Cartão'].toFixed(2)}<br>
             <b>Vendas Dinheiro:</b> R$ ${db.caixa.detalhes['Dinheiro'].toFixed(2)}<br>
             <b>Suprimentos (+):</b> R$ ${db.caixa.suprimentos.toFixed(2)}<br>
             <b>Sangrias (-):</b> R$ ${db.caixa.sangrias.toFixed(2)}<br><hr>
@@ -638,9 +554,10 @@
 
     function confirmarFechamentoCaixa() {
         if (confirm("Deseja realmente fechar o caixa? Os valores diários serão zerados.")) {
-            const totalVendas = db.caixa.detalhes['PIX'] + db.caixa.detalhes['Crédito'] + db.caixa.detalhes['Débito'] + db.caixa.detalhes['Dinheiro'];
+            const totalVendas = db.caixa.detalhes['PIX'] + db.caixa.detalhes['Cartão'] + db.caixa.detalhes['Dinheiro'];
             const saldoDinheiro = (db.caixa.fundo + db.caixa.detalhes['Dinheiro'] + db.caixa.suprimentos) - db.caixa.sangrias;
 
+            // Salva no histórico antes de zerar
             if(!db.historicoCaixas) db.historicoCaixas = [];
             db.historicoCaixas.unshift({
                 dataAbertura: db.caixa.dataAbertura,
@@ -654,7 +571,7 @@
                 detalhes: {...db.caixa.detalhes}
             });
 
-            db.caixa = { status: 'fechado', usuario: '', dataAbertura: '', fundo: 0, entradas: 0, sangrias: 0, suprimentos: 0, detalhes: { 'PIX': 0, 'Crédito': 0, 'Débito': 0, 'Dinheiro': 0 } };
+            db.caixa = { status: 'fechado', usuario: '', dataAbertura: '', fundo: 0, entradas: 0, sangrias: 0, suprimentos: 0, detalhes: { 'PIX': 0, 'Cartão': 0, 'Dinheiro': 0 } };
             document.getElementById('modalFecharCaixa').style.display = 'none';
             salvar();
             showSection('sec-produtos');
@@ -694,7 +611,7 @@
         lista.innerHTML = "";
         if(!db.historicoCaixas) return;
 
-        db.historicoCaixas.forEach((h, index) => {
+        db.historicoCaixas.forEach(h => {
             lista.innerHTML += `<tr>
                 <td><small>${h.dataAbertura}</small></td>
                 <td><small>${h.dataFechamento}</small></td>
@@ -703,34 +620,9 @@
                 <td style="color:red">R$ ${h.sangrias.toFixed(2)}</td>
                 <td style="color:blue">R$ ${h.suprimentos.toFixed(2)}</td>
                 <td>R$ ${h.totalVendas.toFixed(2)}</td>
-                <td>
-                    <button class="btn-edit" style="background: var(--secondary);" onclick="verDetalhesFechamento(${index})">👁️</button>
-                </td>
+                <td style="font-weight:bold">R$ ${h.saldoDinheiroFinal.toFixed(2)}</td>
             </tr>`;
         });
-    }
-
-    function verDetalhesFechamento(index) {
-        const h = db.historicoCaixas[index];
-        document.getElementById('tituloCaixaModal').innerText = "Histórico de Caixa";
-        document.getElementById('areaBtnFechamento').style.display = 'none';
-        const res = document.getElementById('resumoFechamento');
-        
-        res.innerHTML = `
-            <b>Operador:</b> ${h.usuario}<br>
-            <b>Abertura:</b> ${h.dataAbertura}<br>
-            <b>Fechamento:</b> ${h.dataFechamento}<br><hr>
-            <b>Fundo Inicial:</b> R$ ${h.fundo.toFixed(2)}<br>
-            <b>Vendas PIX:</b> R$ ${h.detalhes['PIX'].toFixed(2)}<br>
-            <b>Vendas Crédito:</b> R$ ${h.detalhes['Crédito'].toFixed(2)}<br>
-            <b>Vendas Débito:</b> R$ ${h.detalhes['Débito'].toFixed(2)}<br>
-            <b>Vendas Dinheiro:</b> R$ ${h.detalhes['Dinheiro'].toFixed(2)}<br>
-            <b>Suprimentos (+):</b> R$ ${h.suprimentos.toFixed(2)}<br>
-            <b>Sangrias (-):</b> R$ ${h.sangrias.toFixed(2)}<br><hr>
-            <b>TOTAL VENDAS NO PERÍODO:</b> R$ ${h.totalVendas.toFixed(2)}<br>
-            <b style="color: var(--success)">SALDO FINAL EM DINHEIRO: R$ ${h.saldoDinheiroFinal.toFixed(2)}</b>
-        `;
-        document.getElementById('modalFecharCaixa').style.display = 'block';
     }
 
     // --- GESTÃO DE BACKUP ---
@@ -846,78 +738,56 @@
         if(confirm("Deseja excluir este tipo de serviço?")) { db.servicos = db.servicos.filter(s => s.id !== id); salvar(); }
     }
 
-    // --- PDV BUSCA SMART ---
-    function buscarProdutoSmart(event) {
-        const termo = event.target.value.toLowerCase().trim();
-        const resultadosDiv = document.getElementById('vendaResultados');
-        
-        if (termo.length === 0) {
-            resultadosDiv.style.display = 'none';
-            return;
-        }
-
-        if (event.key === 'Enter') {
-            const produtoExato = db.produtos.find(p => p.codigo.toLowerCase() === termo);
-            if (produtoExato) {
-                adicionarItemDireto(produtoExato.id);
-                event.target.value = '';
-                resultadosDiv.style.display = 'none';
-                return;
-            }
-        }
-
-        const filtrados = db.produtos.filter(p => 
-            p.nome.toLowerCase().includes(termo) || 
-            p.codigo.toLowerCase().includes(termo)
-        );
-
-        if (filtrados.length > 0) {
-            resultadosDiv.innerHTML = filtrados.map(p => `
-                <div class="search-item" onclick="adicionarItemDireto(${p.id})">
-                    <b>${p.codigo}</b> - ${p.nome} (R$ ${p.preco.toFixed(2)})
-                </div>
-            `).join('');
-            resultadosDiv.style.display = 'block';
-        } else {
-            resultadosDiv.style.display = 'none';
+    // --- PDV ---
+    function buscarPorCodigo() {
+        const cod = document.getElementById('vendaBuscaCodigo').value;
+        const produto = db.produtos.find(p => p.codigo === cod);
+        if (produto) {
+            document.getElementById('vendaSelectProduto').value = produto.id;
+            monitorarTipoVenda();
         }
     }
 
-    function adicionarItemDireto(id) {
-        const qtd = parseFloat(document.getElementById('vendaQtd').value) || 1;
+    function sincronizarCodigo() {
+        const id = document.getElementById('vendaSelectProduto').value;
         const produto = db.produtos.find(p => p.id == id);
-        const resultadosDiv = document.getElementById('vendaResultados');
-        const inputBusca = document.getElementById('vendaBuscaSmart');
+        if (produto) document.getElementById('vendaBuscaCodigo').value = produto.codigo;
+    }
 
-        if (produto) {
-            if (produto.estoque < qtd) {
-                alert("Estoque insuficiente!");
-            } else {
-                carrinho.push({ ...produto, qtdVenda: qtd });
-                atualizarCarrinho();
-                inputBusca.value = '';
-                document.getElementById('vendaQtd').value = 1;
-                resultadosDiv.style.display = 'none';
-            }
+    function monitorarTipoVenda() {
+        const id = document.getElementById('vendaSelectProduto').value;
+        const produto = db.produtos.find(p => p.id == id);
+        const inputQtd = document.getElementById('vendaQtd');
+        if(produto && produto.isPeso) {
+            inputQtd.placeholder = "Peso (Ex: 0.500)";
+        } else {
+            inputQtd.placeholder = "Quantidade";
+        }
+    }
+
+    function adicionarAoCarrinho() {
+        const id = document.getElementById('vendaSelectProduto').value;
+        const qtd = parseFloat(document.getElementById('vendaQtd').value);
+        const produto = db.produtos.find(p => p.id == id);
+        if (produto && qtd > 0) {
+            if (produto.estoque < qtd) return alert("Estoque insuficiente!");
+            carrinho.push({ ...produto, qtdVenda: qtd });
+            atualizarCarrinho();
         }
     }
 
     function atualizarCarrinho() {
         const lista = document.getElementById('listaCarrinho');
         const totalTxt = document.getElementById('totalCarrinho');
-        const qtdTxt = document.getElementById('qtdItensCarrinho');
         lista.innerHTML = '';
         let total = 0;
-        let totalItens = 0;
         carrinho.forEach((item, index) => {
             const subtotal = item.preco * item.qtdVenda;
             total += subtotal;
-            totalItens += item.qtdVenda;
             const sufixo = item.isPeso ? 'kg' : 'un';
             lista.innerHTML += `<tr><td>${item.nome} x${item.qtdVenda}${sufixo}</td><td>R$ ${subtotal.toFixed(2)}</td><td><button onclick="removerDoCarrinho(${index})">❌</button></td></tr>`;
         });
         totalTxt.innerText = `R$ ${total.toFixed(2)}`;
-        qtdTxt.innerText = totalItens;
     }
 
     function removerDoCarrinho(index) { carrinho.splice(index, 1); atualizarCarrinho(); }
@@ -935,6 +805,7 @@
         const dataHoje = new Date().toLocaleDateString();
         let valorVenda = 0;
         let custoTotalVenda = 0;
+        let resumoItens = "";
 
         carrinho.forEach(item => {
             if(item.isServicoAgendado) {
@@ -945,7 +816,7 @@
 
         valorVenda = carrinho.reduce((a, b) => a + (b.preco * b.qtdVenda), 0);
         custoTotalVenda = carrinho.reduce((a, b) => a + ((b.custo || 0) * b.qtdVenda), 0);
-        let resumoItens = carrinho.map(i => `${i.nome} (x${i.qtdVenda}${i.isPeso ? 'kg' : ''})`).join(", ");
+        resumoItens = carrinho.map(i => `${i.nome} (x${i.qtdVenda}${i.isPeso ? 'kg' : ''})`).join(", ");
         
         carrinho.forEach(item => {
             if(!item.isServicoAgendado) {
@@ -954,6 +825,7 @@
             }
         });
 
+        // Adiciona ao Caixa
         if (db.caixa.status === 'aberto') {
             db.caixa.detalhes[pgto] += valorVenda;
         }
@@ -972,16 +844,21 @@
             itens: resumoItens 
         });
 
-        playSuccessSound();
         carrinho = [];
         document.getElementById('vendaWhats').value = "";
         atualizarCarrinho();
+
         fecharModal();
         salvar();
     }
 
     function enviarCupomWhats(num, cod, data, total, pgto) {
-        let msg = `*CUPOM DE VENDA ${cod}*\nData: ${data}\nTotal: R$ ${total.toFixed(2)}\nPagamento: ${pgto}\nObrigado pela preferência! 🐾`;
+        let msg = `*CUPOM DE VENDA ${cod}*\n`;
+        msg += `Data: ${data}\n`;
+        msg += `Itens: ${carrinho.map(i => i.nome + ' x' + i.qtdVenda + (i.isPeso ? 'kg' : '')).join(', ')}\n`;
+        msg += `Total: R$ ${total.toFixed(2)}\n`;
+        msg += `Pagamento: ${pgto}\n`;
+        msg += `Obrigado pela preferência! 🐾`;
         window.open(`https://api.whatsapp.com/send?phone=55${num}&text=${encodeURIComponent(msg)}`, '_blank');
     }
 
@@ -990,7 +867,12 @@
         if(p && p.tel) {
             const num = p.tel.replace(/\D/g, '');
             const dataBr = p.data.split('-').reverse().join('/');
-            let msg = `*CONFIRMAÇÃO DE AGENDAMENTO - PETSHOP*\n\nOlá ${p.dono}! Confirmamos o agendamento para o pet: *${p.nome}*\n📅 Data: ${dataBr}\n⏰ Horário: ${p.hora || 'Não informado'}\n🛠️ Serviços: ${p.servicos}\n\nAguardamos vocês! 🐾`;
+            let msg = `*CONFIRMAÇÃO DE AGENDAMENTO - PETSHOP*\n\n`;
+            msg += `Olá ${p.dono}! Confirmamos o agendamento para o pet: *${p.nome}*\n`;
+            msg += `📅 Data: ${dataBr}\n`;
+            msg += `⏰ Horário: ${p.hora || 'Não informado'}\n`;
+            msg += `🛠️ Serviços: ${p.servicos}\n\n`;
+            msg += `Aguardamos vocês! 🐾`;
             window.open(`https://api.whatsapp.com/send?phone=55${num}&text=${encodeURIComponent(msg)}`, '_blank');
         }
     }
@@ -1127,6 +1009,7 @@
         const busca = document.getElementById('buscaHistoricoPet').value.toLowerCase();
         const lista = document.getElementById('listaPetsHistorico');
         lista.innerHTML = "";
+        
         db.pets.filter(p => p.nome.toLowerCase().includes(busca) || p.dono.toLowerCase().includes(busca)).forEach(p => {
             const histHtml = p.historico ? p.historico.map(h => `• ${h}`).join('<br>') : 'Sem histórico';
             lista.innerHTML += `<tr>
@@ -1144,6 +1027,7 @@
 
     function renderizarTudo() {
         const lE = document.getElementById('listaEstoque');
+        const sV = document.getElementById('vendaSelectProduto');
         const lH = document.getElementById('listaAgendaHome');
         const lS = document.getElementById('listaServicosCadastrados');
         const sM = document.getElementById('petServicosMulti');
@@ -1151,7 +1035,7 @@
         
         if (!lE) return;
 
-        lE.innerHTML = ''; lS.innerHTML = ''; sM.innerHTML = ''; lH.innerHTML = '';
+        lE.innerHTML = ''; lS.innerHTML = ''; sV.innerHTML = '<option value="">Selecione produto...</option>'; sM.innerHTML = ''; lH.innerHTML = '';
         sPE.innerHTML = '<option value="novo">-- NOVO PET (CADASTRAR) --</option>';
 
         db.produtos.forEach(p => {
@@ -1167,6 +1051,7 @@
                     <button class="btn-delete" onclick="excluirProduto(${p.id})">🗑️</button>
                 </td>
             </tr>`;
+            sV.innerHTML += `<option value="${p.id}">${p.nome} ${p.isPeso ? '(KG)' : ''}</option>`;
         });
 
         db.servicos.forEach(s => {
@@ -1182,6 +1067,7 @@
             sM.innerHTML += `<option value="${s.id}">${s.nome} (R$ ${s.preco.toFixed(2)})</option>`;
         });
 
+        // Única lista de pets únicos para o select
         const petsUnicos = [];
         db.pets.forEach(p => {
             if(!petsUnicos.find(u => u.nome === p.nome && u.dono === p.dono)) {
@@ -1246,10 +1132,20 @@
         if(pet) {
             const jaNoCarrinho = carrinho.find(item => item.agendamentoId === id);
             if(!jaNoCarrinho) {
-                carrinho.push({ id: 'SERV-' + pet.id, nome: `Serviço: ${pet.nome} (${pet.servicos})`, custo: pet.custo || 0, preco: pet.valor, qtdVenda: 1, isServicoAgendado: true, agendamentoId: id });
+                carrinho.push({
+                    id: 'SERV-' + pet.id,
+                    nome: `Serviço: ${pet.nome} (${pet.servicos})`,
+                    custo: pet.custo || 0,
+                    preco: pet.valor,
+                    qtdVenda: 1,
+                    isServicoAgendado: true,
+                    agendamentoId: id
+                });
                 atualizarCarrinho();
                 verificarAberturaCaixa(); 
-            } else alert("Este serviço já está no carrinho.");
+            } else {
+                alert("Este serviço já está no carrinho.");
+            }
         }
     }
 
